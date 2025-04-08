@@ -7,8 +7,11 @@
 #include <vector>
 using namespace std;
 
-//Creamos una constante para evitar conflictos
-constexpr int tamanoMemoria = 4096;
+constexpr uint16_t tamanoMemoria = 4096;
+constexpr uint8_t  pantallaHorizontal= 64;
+constexpr uint8_t  pantallaVertical = 32;
+
+uint16_t interpreteRepetidor = 0x200;
 
 //Configuracion y estado de la CHIP-8.
 struct maquina
@@ -19,41 +22,63 @@ struct maquina
 	
 	//Espacio para almacenar el codigo del juego y las variables
 	//(son 4KB).
-	uint8_t  memoria[tamanoMemoria];
-	//Pantalla de 32 filas por 64 columnas
-	uint8_t display[32][64] = {0};
-	//Registro para los numeros hexadecimal
-	uint8_t v[16];
-	//Registro para almacenar direcciones de memoria
-	uint16_t i;
+	uint16_t memoria[tamanoMemoria];
+	uint8_t pantallaTamano[pantallaVertical][pantallaHorizontal] = {0};
+};
+
+struct opcode
+{
+	void ejecutar (maquina& chip)
+	{
+		while (true)
+		{
+			
+		}
+	}
 };
 
 class leerRoom
 {
 	public:
-	void leerArchivo()
+	//Llamamos al objeto maquina y &chip se utiliza la instancia creada
+	//y que se pueda modificar directamente (que no sea una copia de la
+	//variable)
+	void leerArchivo(maquina &chip)
 	{
     	//Utilizamos la siguiente linea seleccionar la ruta de un archivo
 		//a una variable y a su vez lo abrimos pero en binario.
 		ifstream leerArchivo("room.txt",ios::binary);
-
-		//Obtenemos el tamaño exacto del contenido.
-		leerArchivo.seekg(0,ios::end);
-		size_t tamanoDelArchivo = leerArchivo.tellg();
-		leerArchivo.seekg(0,ios::beg);
-
 		//Hacemos comprobacion para saber si se abrio correctamente.
-		if (leerArchivo.is_open())
-		{
-			//Leemos el contenido en un vector
-			vector<uint8_t> contenido (tamanoDelArchivo);
-			leerArchivo.read(reinterpret_cast<char *> (contenido.data()), tamanoDelArchivo);
+    	if (leerArchivo.is_open())
+    	{
+    	    //Obtenemos el tamaño exacto del contenido.
+    		leerArchivo.seekg(0,ios::end);
+    		size_t tamanoDelArchivo = leerArchivo.tellg();
+    		leerArchivo.seekg(0,ios::beg);
+    
+    		//Verificamos que el tamaño del archivo no sobrepase el tamaño de
+    		//memoria asignada (recordemos que la maquina usa 512kb)
+    		//0x000 a 0x1FF estan reservadas 0-511 kb
+    		if (tamanoDelArchivo > (tamanoMemoria - 0x200))
+    		{
+    			return;
+    		}
+    		//Lee el archivo despues de la memoria 0x200 (512kb)
+    		//reinterpret_cast convierte el archivo de uint_8 a char para que
+    		//sea compartible, chip.memoria manda la ubicacion donde se
+    		//pueda guardar las instrucciones a ese punto en la memoria.
+    		leerArchivo.read(reinterpret_cast<char *>(&chip.memoria[0x200]), tamanoDelArchivo);
 
 			//Mostramos los primeros 16 bytes en hexadecimal
 			cout << "El contenido en hexadecimal:\n";
 			for (size_t i = 0; i< min (tamanoDelArchivo, size_t(16)); i++)
 			{
-				printf("%02X", contenido[i]);
+				//Imprimimos el contenido de la memoria despues del 512
+				//porque solo se utilizara lo que hay despues de eso
+				//y cambiamos la variable contenido a chip.memoria
+				//ya que lo mostraremos directamente de la variable
+				//principal.
+				printf("%02X", chip.memoria[0x200 + i]);
 			}
 			cout << endl;
 			leerArchivo.close();
@@ -67,7 +92,12 @@ class leerRoom
 int main ()
 {
 	cout << "Nada w\n";
+    //Creamos una instancia para poder leer directamente en la
+    //memoria
+    maquina chip;
+    //Llamamos la clase para leer la room
     leerRoom c;
-	c.leerArchivo();
+    //Se declara chip para poder utilizarlo en LeerArchivo
+	c.leerArchivo(chip);
 	return 0;
 }
