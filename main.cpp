@@ -7,6 +7,7 @@
 #include <vector>
 using namespace std;
 
+//Posible error en tamanoMemoria y su tamaño de tipo
 constexpr uint16_t tamanoMemoria = 4096;
 constexpr uint8_t  pantallaHorizontal= 64;
 constexpr uint8_t  pantallaVertical = 32;
